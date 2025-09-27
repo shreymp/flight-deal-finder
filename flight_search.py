@@ -1,0 +1,68 @@
+import requests
+from pprint import pprint
+from flight_data import FlightData
+
+SEARCH_ENDPOINT = 'https://tequila-api.kiwi.com/v2/search'
+
+
+QUERY_ENDPOINT = 'https://tequila-api.kiwi.com/locations/query'
+
+
+class FlightSearch:
+    def get_iata_code(self, city_name):
+        headers = {
+            'apikey': API_KEY
+        }
+
+        params = {
+            'term': city_name,
+            'location_types': 'city'
+        }
+        response = requests.get(url=QUERY_ENDPOINT, params=params, headers=headers)
+        data = response.json()['locations']
+        code = data[0]['code']
+        return code
+
+    def get_flight_info(self, departure_city_code, destination_city_code, from_time, to_time):
+
+
+
+
+
+        headers = {
+            'apiKey': API_KEY
+        }
+
+        params = {
+            'fly_from': departure_city_code,
+            'fly_to': destination_city_code,
+            'date_from': from_time.strftime('%d/%m/%Y'),
+            'date_to': to_time.strftime('%d/%m/%Y'),
+            'nights_in_dst_from': 7,
+            'nights_in_dst_to': 28,
+            'flight_type': 'round',
+            'curr': 'USD',
+            'one_for_city': 1,
+            'max_stopovers': 0
+        }
+
+        response = requests.get(SEARCH_ENDPOINT, params=params, headers=headers)
+        response.raise_for_status()
+
+        try:
+            data = response.json()['data'][0]
+        except IndexError:
+            print(f'No flights found for {destination_city_code}.')
+            return None
+
+        flight_data = FlightData(
+            price=data['price'],
+            departure_city=data['route'][0]['cityFrom'],
+            departure_airport_code=data['route'][0]['flyFrom'],
+            destination_city=data['route'][0]['cityTo'],
+            destination_airport=data['route'][0]['flyTo'],
+            out_date=data['route'][0]['local_departure'].split('T')[0],
+            return_date=data['route'][1]['local_departure'].split('T')[0]
+        )
+
+        return flight_data
